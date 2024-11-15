@@ -51,8 +51,6 @@ mongoose.connect('mongodb+srv://kenilk677:KgbYiGyRpp7HS4cB@cluster0.lziadv4.mong
     },
     googleId: {
       type: String,
-      unique: true,
-      default: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
     },
     // Other fields here
   });
