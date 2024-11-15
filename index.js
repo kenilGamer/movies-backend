@@ -19,7 +19,7 @@ const userRouter = require('./routers/userRouter');
 const User = require('./models/userModel');
 const path = require('path');
 app.use(cors({
-  origin: 'http://localhost:5173',
+      origin: 'https://movies.godcraft.fun',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization','Access-Control-Allow-Origin'],
   credentials: true
@@ -54,7 +54,7 @@ app.use((req, res, next) => {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "http://localhost:3000/auth/google/callback",  // Ensure this matches the URI in the Google Developer Console
+  callbackURL: "https://movies.godcraft.fun/auth/google/callback",  // Ensure this matches the URI in the Google Developer Console
 },
 async (accessToken, refreshToken, profile, cb) => {
   const user = await User.findOne({ googleId: profile.id });

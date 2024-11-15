@@ -137,7 +137,7 @@ router.get('/auth/google/callback', async (req, res) => {
           code,
           client_id: process.env.GOOGLE_CLIENT_ID,
           client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          redirect_uri: 'http://localhost:3000/auth/google/callback',
+          redirect_uri: 'https://movies.godcraft.fun/auth/google/callback',
           grant_type: 'authorization_code',
         },
       });
@@ -174,7 +174,7 @@ router.get('/auth/google/callback', async (req, res) => {
       const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
 
       // Redirect to frontend with the token
-      res.redirect(`http://localhost:5173/login?token=${token}`);
+      res.redirect(`https://movies.godcraft.fun/login?token=${token}`);
       res.status(200).send({ message: 'Logged in successfully', token });
       
     } catch (error) {
@@ -206,7 +206,7 @@ router.get('/auth/google/callback', async (req, res) => {
       }
     });
   
-    const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
+    const resetLink = `https://movies.godcraft.fun/reset-password/${resetToken}`;
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email, // Assuming email is the email
