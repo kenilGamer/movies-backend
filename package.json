@@ -2,9 +2,8 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "mocha tests/**/*.js",
-    "start": "node --trace-deprecation index.js"
+ "scripts": {
+  "start": "node index.js"
   },
   "author": "kenil",
   "license": "ISC",
@@ -32,5 +31,8 @@
     "chai": "^5.1.2",
     "mocha": "^10.8.2",
     "supertest": "^7.0.0"
+  },
+  "overrides": {
+  "node-fetch": "^3.0.0"
   }
 }
