@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha tests/**/*.js",
-    "start": "node index.js"
+    "start": "node --trace-deprecation index.js"
   },
   "author": "kenil",
   "license": "ISC",
