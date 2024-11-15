@@ -9,64 +9,80 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const nodemailer = require('nodemailer');
-const session = require('express-session'); 
+const session = require('express-session');
 const axios = require('axios');
 const multer = require('multer');
 const upload = require('./Multer');
-const cors = require('cors'); 
+const cors = require('cors');
 const localStrategy = require('passport-local').Strategy;
 const userRouter = require('./routers/userRouter');
 const User = require('./models/userModel');
 const path = require('path');
+const crypto = require('crypto');
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => {
+  console.log('MongoDB connected');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
+});
+
+// CORS Configuration
 app.use(cors({
-      origin: 'https://movies.godcraft.fun',
+  origin: 'https://movies.godcraft.fun',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization','Access-Control-Allow-Origin'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
+  credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Session Configuration
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }
+  resave: false, 
+  saveUninitialized: false, 
+  cookie: { secure: process.env.NODE_ENV === 'production' },
 }));
+
+// Passport Initialization
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Static Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-});
-const crypto = require('crypto');
+// Content Security Policy
 app.use((req, res, next) => {
   res.locals.nonce = crypto.randomBytes(16).toString('base64');
-  next();
-});
-app.use((req, res, next) => {
   res.setHeader("Content-Security-Policy", `script-src 'self' 'nonce-${res.locals.nonce}'`);
   next();
 });
+
+// Google OAuth Strategy
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://movies.godcraft.fun/auth/google/callback",  // Ensure this matches the URI in the Google Developer Console
-},
-async (accessToken, refreshToken, profile, cb) => {
-  const user = await User.findOne({ googleId: profile.id });
-  if (user) {
-    return cb(null, user);
-  } else {
-    const newUser = new User({
-      username: profile.displayName,
-      googleId: profile.id
-    });
-    await newUser.save();
-    return cb(null, newUser);
+  callbackURL: "https://movies.godcraft.fun/auth/google/callback",
+}, async (accessToken, refreshToken, profile, cb) => {
+  try {
+    const user = await User.findOne({ googleId: profile.id });
+    if (user) {
+      return cb(null, user);
+    } else {
+      const newUser = new User({
+        username: profile.displayName,
+        googleId: profile.id,
+      });
+      await newUser.save();
+      return cb(null, newUser);
+    }
+  } catch (err) {
+    return cb(err, null);
   }
 }));
 
@@ -74,12 +90,20 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-  passport.deserializeUser((id, done) => {
+passport.deserializeUser((id, done) => {
   User.findById(id, (err, user) => done(err, user));
 });
 
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
+});
 
+// Routers
+app.use('/', userRouter);
+
+// Start Server
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
 });
-app.use('/', userRouter);
