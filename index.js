@@ -43,7 +43,7 @@ const MongoStore = require('connect-mongo');
 const store = MongoStore.create({
   mongoUrl: process.env.MONGO_URI,
   collectionName: 'sessions'
-});
+}); 
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
