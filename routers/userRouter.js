@@ -42,7 +42,7 @@ router.post('/api/signup', upload.single('avatar'), async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const user = new User({ username, email, age, password: hashedPassword, avatar });
+    const user = new User({ username, email, age, password: hashedPassword, avatar, googleId: user._id});
     await user.save();
 
     // Optionally, generate a token
