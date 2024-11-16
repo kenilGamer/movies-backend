@@ -9,7 +9,7 @@ const upload = require('../Multer');
 const axios = require('axios');
 const googleModel = require('../models/googleModel');
 router.post('/api/signup', upload.single('avatar'), async (req, res) => {
-  const { username, email, age, password } = req.body;
+  const { username, email, age, password, googleId } = req.body;
   const avatar = req.file?.path.replace(/\\/g, '/'); // Normalize the file path
 
   console.log('Request body:', req.body);
@@ -42,7 +42,7 @@ router.post('/api/signup', upload.single('avatar'), async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const user = new User({ username, email, age, password: hashedPassword, avatar, googleId: user._id});
+    const user = new User({ username, email, age, password: hashedPassword, avatar, googleId});
     await user.save();
 
     // Optionally, generate a token
