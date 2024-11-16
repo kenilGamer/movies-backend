@@ -9,39 +9,54 @@ const upload = require('../Multer');
 const axios = require('axios');
 const googleModel = require('../models/googleModel');
 router.post('/api/signup', upload.single('avatar'), async (req, res) => {
-    const { username, email, age, password } = req.body;
-    const avatar = req.file?.path; // Get the file path from multer
-    console.log('Request body:', req.body);
+  const { username, email, age, password } = req.body;
+  const avatar = req.file?.path.replace(/\\/g, '/'); // Normalize the file path
+
+  console.log('Request body:', req.body);
   console.log('Uploaded file:', req.file);
 
+  if (!avatar) {
+    return res.status(400).send('Avatar is required');
+  }
 
-    if (!avatar) {
-      return res.status(400).send('Avatar is required');
+  // Validate password strength
+  const validPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+  if (!validPassword) {
+    return res.status(400).send(
+      'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    );
+  }
+
+  if (!username || !password) {
+    return res.status(400).send('Username and password are required');
+  }
+
+  try {
+    // Check if the user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      return res.status(400).send('Username or email already in use');
     }
-  
-    console.log('Received signup request:', req.body);
-  
-    // Validate password strength
-    const validPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
-    if (!validPassword) { 
-      return res.status(400).send('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character');
-    }
-    if (!username || !password) {
-      return res.status(400).send('Username and password are required');
-    }
-  
-    try {
-      // Hash the password with a salt round of 10
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = new User({ username, email, age, password: hashedPassword, avatar });
-      await user.save();
-      res.status(201).send('User created successfully');
-      console.log(user);
-    } catch (err) {
-      console.error(err);
-      res.status(500).send(`Error creating user: ${err}`);
-    }
-  });
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create the user
+    const user = new User({ username, email, age, password: hashedPassword, avatar });
+    await user.save();
+
+    // Optionally, generate a token
+    const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
+
+    // Respond to the client
+    res.status(201).send({ message: 'User created successfully', token });
+    console.log(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('An error occurred while creating the user. Please try again.');
+  }
+});
+
   router.post('/api/login', async (req, res) => {
     const { username , password } = req.body;
     console.log(username,password);

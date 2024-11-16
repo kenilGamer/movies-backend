@@ -51,7 +51,10 @@ mongoose.connect('mongodb+srv://kenilk677:KgbYiGyRpp7HS4cB@cluster0.lziadv4.mong
     },
     googleId: {
       type: String,
-    },
+      unique: true, // Keep it unique for Google users
+      sparse: true, // Allows null values for non-Google users
+  },
+            
     // Other fields here
   });
   
