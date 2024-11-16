@@ -53,7 +53,7 @@ router.post('/api/signup', upload.single('avatar'), async (req, res) => {
     console.log(user);
   } catch (err) {
     console.error(err);
-    res.status(500).send('An error occurred while creating the user. Please try again.');
+    res.status(500).send(`An error occurred while creating the user. Please try again. ${err}`);
   }
 });
 

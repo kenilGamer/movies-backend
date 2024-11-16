@@ -52,7 +52,7 @@ mongoose.connect('mongodb+srv://kenilk677:KgbYiGyRpp7HS4cB@cluster0.lziadv4.mong
     googleId: {
       type: String,
       required: function() {
-        return !this.email; // Only require email if it's not a Google user
+        return !this.email; 
       },
     },
             
