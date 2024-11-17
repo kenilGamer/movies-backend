@@ -29,7 +29,7 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 
 // CORS Configuration
 app.use(cors({
-  origin: 'https://movies.godcraft.fun',
+  origin: ['https://movies.godcraft.fun', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
   credentials: true,
