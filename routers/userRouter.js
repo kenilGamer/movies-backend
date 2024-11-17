@@ -190,8 +190,12 @@ router.get('/auth/google/callback', async (req, res) => {
       const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
 
       // Redirect to frontend with the token
+    if(accessToken ){
       res.redirect(`https://movies.godcraft.fun/login?token=${token}`);
       res.status(200).send({ message: 'Logged in successfully', token });
+    }else{
+      res.status(400).send({ message: 'Failed to login' });
+    }
       
     } catch (error) {
       console.error('Error during token exchange:', error);
