@@ -171,7 +171,6 @@ router.get('/auth/google/callback', async (req, res) => {
         // const email = profileData.data.email || 'default@example.com'; // Provide default email if missing
         const username = profileData.data.name;
         const googleId = profileData.data.sub;
-        const email = profileData.data.email;
         // Create new user with Google profile data
         user = new User({
           username,
@@ -179,7 +178,6 @@ router.get('/auth/google/callback', async (req, res) => {
           googleProfile: profileImage,
           age: 18, // Default age if not provided
           password: googleId, // You may want to use a secure random value instead
-          email,
         });
         await user.save();
         upload.single(user.avatar);
