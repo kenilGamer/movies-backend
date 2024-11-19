@@ -192,7 +192,11 @@ router.get('/auth/google/callback', async (req, res) => {
 
       // Redirect to frontend with the token
     if(accessToken ){
-      res.redirect(`https://movies.godcraft.fun/login?token=${token}`);
+      if(process.env.production === 'production'){
+        res.redirect(`https://movies.godcraft.fun/login?token=${token}`);
+      }else{
+        res.redirect(`http://localhost:3000/login?token=${token}`);
+      }
       // res.status(200).send({ message: 'Logged in successfully'});
       console.log(user);
     }else{
