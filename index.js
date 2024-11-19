@@ -73,8 +73,8 @@ passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: "https://movies-backend-07f5.onrender.com/auth/google/callback",
-  failureRedirect: '/login',
   successRedirect: 'https://movies.godcraft.fun/profile',
+  failureRedirect: '/login',
 }, async (accessToken, refreshToken, profile, cb) => {
   try {
     const user = await User.findOne({ googleId: profile.id });
