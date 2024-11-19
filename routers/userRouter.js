@@ -138,7 +138,7 @@ const verifyToken = (req, res, next) => {
   
 // Google Auth route
 router.get('/auth/google', passport.authenticate('google', {
-  scope: ['profile'],
+  scope: ['profile','email'],
 }));
 
 router.get('/auth/google/callback', async (req, res) => {
@@ -168,13 +168,14 @@ router.get('/auth/google/callback', async (req, res) => {
       let user = await User.findOne({ googleId: profileData.data.sub });
       if (!user) {
         const profileImage = profileData.data.picture;
-        // const email = profileData.data.email || 'default@example.com'; // Provide default email if missing
+        const email = profileData.data.email;
         const username = profileData.data.name;
         const googleId = profileData.data.sub;
         // Create new user with Google profile data
         user = new User({
           username,
           googleId,
+          email,
           googleProfile: profileImage,
           age: 18, // Default age if not provided
           password: googleId, // You may want to use a secure random value instead
