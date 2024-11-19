@@ -163,7 +163,7 @@ router.get('/auth/google/callback', async (req, res) => {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-
+      console.log(profileData.data);
       // Find or create user based on Google profile
       let user = await User.findOne({ googleId: profileData.data.sub });
       if (!user) {
