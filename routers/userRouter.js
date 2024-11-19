@@ -166,15 +166,18 @@ router.get('/auth/google/callback', async (req, res) => {
       console.log(profileData.data);
       // Find or create user based on Google profile
       let user = await User.findOne({ googleId: profileData.data.sub });
+      const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
       if (!user) {
         const profileImage = profileData.data.picture;
         const email = profileData.data.email;
         const username = profileData.data.name;
         const googleId = profileData.data.sub;
+      
         // Create new user with Google profile data
         user = new User({
           username,
           googleId,
+          token,
           email,
           googleProfile: profileImage,
           age: 18, // Default age if not provided
@@ -186,12 +189,11 @@ router.get('/auth/google/callback', async (req, res) => {
  
 
       // Create JWT token for the user
-      const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
 
       // Redirect to frontend with the token
     if(accessToken ){
-      res.redirect(`https://movies.godcraft.fun/login?token=${token}`);
-      res.status(200).send({ message: 'Logged in successfully', token, user});
+      // res.redirect(`https://movies.godcraft.fun/login?token=${token}`);
+      res.status(200).send({ message: 'Logged in successfully', token, user,profileData:profileData.data });
       console.log(user);
     }else{
       res.status(400).send({ message: 'Failed to login' });
