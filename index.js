@@ -73,7 +73,7 @@ passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: "https://movies-backend-07f5.onrender.com/auth/google/callback",
-  successRedirect: 'https://movies.godcarft.fun/profile',
+  successRedirect: 'https://movies.godcarft.fun/',
   failureRedirect: '/login',
 }, async (accessToken, refreshToken, profile, cb) => {
   try {
