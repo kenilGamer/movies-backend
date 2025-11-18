@@ -10,21 +10,26 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const nodemailer = require('nodemailer');
 const session = require('express-session');
-const axios = require('axios');
+const axios = require('axios'); 
 const multer = require('multer');
 const upload = require('./Multer');
 const cors = require('cors');
 const localStrategy = require('passport-local').Strategy;
 const userRouter = require('./routers/userRouter');
+const movieRouter = require('./routers/movieRouter');
 const User = require('./models/userModel');
 const path = require('path');
 const crypto = require('crypto');
+const { errorHandler } = require('./middleware/errorHandler');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI).then(() => {
-  console.log('MongoDB connected');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('MongoDB connected');
+  }
 }).catch(err => {
   console.error('MongoDB connection error:', err);
+  process.exit(1); // Exit on MongoDB connection failure
 });
 
 // CORS Configuration
@@ -64,7 +69,40 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Content Security Policy
 app.use((req, res, next) => {
   res.locals.nonce = crypto.randomBytes(16).toString('base64');
-  res.setHeader("Content-Security-Policy", `script-src 'self' 'nonce-${res.locals.nonce}'`);
+  
+  // More permissive CSP for development, stricter for production
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
+  if (isDevelopment) {
+    // Development CSP - allows localhost connections for DevTools
+    res.setHeader("Content-Security-Policy", 
+      `default-src 'self'; ` +
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${res.locals.nonce}'; ` +
+      `style-src 'self' 'unsafe-inline'; ` +
+      `img-src 'self' data: https:; ` +
+      `font-src 'self' data:; ` +
+      `connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://api.themoviedb.org https://*.googleapis.com https://*.google.com; ` +
+      `frame-src 'self' https://*.google.com; ` +
+      `object-src 'none'; ` +
+      `base-uri 'self'; ` +
+      `form-action 'self';`
+    );
+  } else {
+    // Production CSP - stricter security
+    res.setHeader("Content-Security-Policy", 
+      `default-src 'self'; ` +
+      `script-src 'self' 'nonce-${res.locals.nonce}'; ` +
+      `style-src 'self' 'unsafe-inline'; ` +
+      `img-src 'self' data: https://image.tmdb.org https://*.googleusercontent.com; ` +
+      `font-src 'self' data:; ` +
+      `connect-src 'self' https://api.themoviedb.org https://*.googleapis.com https://*.google.com; ` +
+      `frame-src 'self' https://*.google.com; ` +
+      `object-src 'none'; ` +
+      `base-uri 'self'; ` +
+      `form-action 'self';`
+    );
+  }
+  
   next();
 });
 
@@ -72,8 +110,8 @@ app.use((req, res, next) => {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://movies-backend-07f5.onrender.com/auth/google/callback",
-  successRedirect: 'https://movies.godcarft.fun/',
+  callbackURL: process.env.production === 'production' ? "https://movies-backend-07f5.onrender.com/auth/google/callback" : "http://localhost:3000/auth/google/callback",
+  successRedirect: process.env.production === 'production' ? 'https://movies.godcarft.fun/' : 'http://localhost:5173/',
   failureRedirect: '/login',
 }, async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -101,16 +139,35 @@ passport.deserializeUser((id, done) => {
   User.findById(id, (err, user) => done(err, user));
 });
 
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something went wrong!');
-});
-
 // Routers
 app.use('/', userRouter);
+app.use('/api/movies', movieRouter);
+app.use('/api/user', require('./routers/watchlistRouter'));
+app.use('/api/search', require('./routers/searchRouter'));
+app.use('/api/discover', require('./routers/discoverRouter'));
+app.use('/api/reviews', require('./routers/reviewsRouter'));
+app.use('/api/collections', require('./routers/collectionsRouter'));
+app.use('/api/recommendations', require('./routers/recommendationsRouter'));
+app.use('/api/notifications', require('./routers/notificationsRouter'));
+
+// Error Handling Middleware (must be last)
+app.use(errorHandler);
 
 // Start Server
-app.listen(port, () => {
-  console.log(`Server started on port ${port}`);
+const server = app.listen(process.env.PORT || port, () => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Server started on port ${process.env.PORT || port}`);
+  }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    mongoose.connection.close(false, () => {
+      console.log('MongoDB connection closed');
+      process.exit(0);
+    });
+  });
 });

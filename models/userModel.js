@@ -55,8 +55,31 @@ mongoose.connect('mongodb+srv://kenilk677:KgbYiGyRpp7HS4cB@cluster0.lziadv4.mong
         return !this.email; 
       },
     },
-            
-    // Other fields here
+    watchlist: [{
+      movieId: Number,
+      mediaType: { type: String, enum: ['movie', 'tv'] },
+      addedAt: { type: Date, default: Date.now }
+    }],
+    favorites: [{
+      movieId: Number,
+      mediaType: { type: String, enum: ['movie', 'tv'] },
+      addedAt: { type: Date, default: Date.now }
+    }],
+    preferredLanguage: {
+      type: String,
+      default: 'en-US'
+    },
+    theme: {
+      type: String,
+      enum: ['dark', 'light'],
+      default: 'dark'
+    },
+    watchHistory: [{
+      movieId: Number,
+      mediaType: { type: String, enum: ['movie', 'tv'] },
+      watchedAt: { type: Date, default: Date.now },
+      progress: { type: Number, default: 0 } // Percentage watched
+    }]
   });
   
 

@@ -1,0 +1,44 @@
+name: Build and Test Backend
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: movies-backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: movies-backend
+        run: npm ci
+      
+      - name: Run linter (if configured)
+        working-directory: movies-backend
+        run: |
+          echo "Linting checks would go here"
+          # Add linting commands if you have ESLint configured
+      
+      - name: Check for environment variables
+        working-directory: movies-backend
+        run: |
+          if [ ! -f .env.example ]; then
+            echo "Warning: .env.example not found"
+          else
+            echo ".env.example exists"
+          fi
+

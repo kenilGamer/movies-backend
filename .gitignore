@@ -1,2 +1,8 @@
-/.env
-/node_modules
+node_modules
+.env
+.env.local
+.env.production
+uploads/*
+!uploads/.gitkeep
+*.log
+.DS_Store

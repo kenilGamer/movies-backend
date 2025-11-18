@@ -146,27 +146,44 @@ router.get('/auth/google/callback', async (req, res) => {
 
   if (code) {
     try {
+      // Determine redirect URI based on environment
+      const redirectUri = process.env.production === 'production' 
+        ? 'https://movies-backend-07f5.onrender.com/auth/google/callback'
+        : 'http://localhost:3000/auth/google/callback';
+      
       // Exchange authorization code for access token
-      const { data } = await axios.post('https://oauth2.googleapis.com/token', null, {
-        params: { 
+      // Google OAuth requires form data in the body, not query params
+      const { data } = await axios.post('https://oauth2.googleapis.com/token', 
+        new URLSearchParams({
           code,
           client_id: process.env.GOOGLE_CLIENT_ID,
           client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          redirect_uri: 'https://movies-backend-07f5.onrender.com/auth/google/callback',
+          redirect_uri: redirectUri,
           grant_type: 'authorization_code',
-        },
-      });
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
 
       const accessToken = data.access_token;
+      if (!accessToken) {
+        throw new Error('No access token received from Google');
+      }
+
       const profileData = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      console.log(profileData.data);
+      
+      console.log('Google profile data:', profileData.data);
+      
       // Find or create user based on Google profile
       let user = await User.findOne({ googleId: profileData.data.sub });
-      const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
+      
       if (!user) {
         const profileImage = profileData.data.picture;
         const email = profileData.data.email;
@@ -177,35 +194,38 @@ router.get('/auth/google/callback', async (req, res) => {
         user = new User({
           username,
           googleId,
-          token,
           email,
           googleProfile: profileImage,
           age: 18, // Default age if not provided
           password: googleId, // You may want to use a secure random value instead
         });
         await user.save();
-        upload.single(user.avatar);
       }
- 
 
-      // Create JWT token for the user
+      // Create JWT token for the user (after user is found/created)
+      const token = jwt.sign({ userId: user._id }, process.env.SESSION_SECRET, { expiresIn: '1d' });
 
       // Redirect to frontend with the token
-    if(accessToken ){
-      if(process.env.production === 'production'){
+      if (process.env.production === 'production') {
         res.redirect(`https://movies.godcarft.fun/login?token=${token}`);
-      }else{
+      } else {
         res.redirect(`http://localhost:5173/login?token=${token}`);
       }
-      // res.status(200).send({ message: 'Logged in successfully'});
-      console.log(user);
-    }else{
-      res.status(400).send({ message: 'Failed to login' });
-    }
+      
+      console.log('User logged in:', user.username);
       
     } catch (error) {
-      console.error('Error during token exchange:', error);
-      return res.redirect('/error');
+      console.error('Error during Google OAuth callback:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
+      // Redirect to login with error message
+      const errorMessage = encodeURIComponent('Failed to authenticate with Google. Please try again.');
+      if (process.env.production === 'production') {
+        return res.redirect(`https://movies.godcarft.fun/login?error=${errorMessage}`);
+      } else {
+        return res.redirect(`http://localhost:5173/login?error=${errorMessage}`);
+      }
     }
   } else {
     return res.redirect('/');
@@ -293,7 +313,7 @@ router.get('/auth/google/callback', async (req, res) => {
     res.send(user);
   });
  
-  router.put('/settings',verifyToken,upload.single('avatar'), async (req, res) => {
+  router.put('/settings', verifyToken, upload.single('avatar'), async (req, res) => {
       try {
         console.log(req.body);
         const { username, email, age } = req.body;
@@ -330,4 +350,7 @@ router.get('/auth/google/callback', async (req, res) => {
   );
   
 
+  // Export verifyToken for use in other routers
+  router.verifyToken = verifyToken;
+  
   module.exports = router;
