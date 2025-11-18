@@ -6,11 +6,28 @@ const { retryWithBackoff, circuitBreaker } = require('../utils/retryHandler');
 const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-// Rate limiting for search
+// Rate limiting for search - more lenient for better UX
 const searchRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 searches per windowMs
+  max: 100, // Limit each IP to 100 searches per 15 minutes (increased from 50)
   message: 'Too many search requests, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
+    const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+    res.status(429).json({
+      success: false,
+      error: {
+        message: 'Too many search requests, please try again later.',
+        status_code: 429,
+        retry_after: retryAfter
+      }
+    });
+  },
+  skip: (req) => {
+    // Skip rate limiting in development if needed
+    return process.env.NODE_ENV === 'development' && req.query.skipLimit === 'true';
+  }
 });
 
 router.use(searchRateLimiter);
