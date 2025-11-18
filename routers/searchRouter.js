@@ -36,8 +36,17 @@ router.get('/', cacheMiddleware(1800), asyncHandler(async (req, res) => {
       }))
     );
 
-    res.json(response.data);
+    // Handle empty results gracefully
+    if (response && response.data) {
+      res.json(response.data);
+    } else {
+      res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
   } catch (error) {
+    // If TMDB returns 404, return empty results instead of error
+    if (error.response && error.response.status === 404) {
+      return res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
     throw error;
   }
 }));
@@ -62,8 +71,15 @@ router.get('/movie', cacheMiddleware(1800), asyncHandler(async (req, res) => {
       }))
     );
 
-    res.json(response.data);
+    if (response && response.data) {
+      res.json(response.data);
+    } else {
+      res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
   } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
     throw error;
   }
 }));
@@ -88,8 +104,15 @@ router.get('/tv', cacheMiddleware(1800), asyncHandler(async (req, res) => {
       }))
     );
 
-    res.json(response.data);
+    if (response && response.data) {
+      res.json(response.data);
+    } else {
+      res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
   } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
     throw error;
   }
 }));
@@ -114,8 +137,15 @@ router.get('/person', cacheMiddleware(1800), asyncHandler(async (req, res) => {
       }))
     );
 
-    res.json(response.data);
+    if (response && response.data) {
+      res.json(response.data);
+    } else {
+      res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
   } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return res.json({ results: [], page: 1, total_pages: 0, total_results: 0 });
+    }
     throw error;
   }
 }));
